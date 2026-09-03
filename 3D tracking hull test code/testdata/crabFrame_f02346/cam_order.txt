@@ -1,0 +1,11 @@
+video labeled cam4Synced is actually first camera in DLT (physically labeled cam 3)
+video labeled cam3Synced is actually third camera in DLT (physically labeled cam 4)
+video labeled cam2Synced is actually fourth camera in DLT (physically labeled cam 2)
+video labeled cam1Synced is actually second camera in DLT (physically labeled cam 1)
+
+camera pairing in use
+  DLT  mask#    mask file                              size (WxH)
+  1    4        cam4Synced_f01123_mask.png             2992 x 5312
+  2    1        cam1Synced_f01135_mask.png             2992 x 5312
+  3    3        cam3Synced_f01150_mask.png             2992 x 5312
+  4    2        cam2Synced_f01114_mask.png             2992 x 5312
