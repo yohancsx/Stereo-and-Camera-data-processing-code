@@ -1,0 +1,7 @@
+# MATLAB editor autosave files
+*.asv
+*.autosave
+
+# MATLAB generated code / build artifacts
+codegen/
+slprj/

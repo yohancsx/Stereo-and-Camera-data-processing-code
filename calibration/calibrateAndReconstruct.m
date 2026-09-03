@@ -52,8 +52,8 @@ addpath(thisDir, fullfile(thisDir, 'Helpers'));
 % Background on the fisheye model:
 %   https://www.mathworks.com/help/vision/ug/fisheye-calibration-basics.html
 %
-% To get the frames out of the calibration video, use crabROITool.m: draw
-% the ROI around the checkerboard and export the frame.
+% To get the frames out of the calibration video, use videoSegmentTool.m:
+% draw the ROI around the checkerboard and export the frame.
 
 [fMat, pMat] = uigetfile({'*.mat','Camera parameters (*.mat)'}, ...
     'Select the fisheye calibration .mat file');
@@ -217,6 +217,6 @@ end
 
 
 %% Step 7 - Align to gravity (optional but recommended)
-% Run gravity_align_points.m on the CSV just saved. It rotates every point so
+% Run alignToGravity.m on the CSV just saved. It rotates every point so
 % a digitised plumb line becomes vertical. Without it, world "up" is
 % arbitrary and every fall velocity or orientation needs a correction later.

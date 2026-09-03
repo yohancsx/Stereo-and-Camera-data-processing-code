@@ -1,4 +1,4 @@
-function cfg = crabConfig(tool, outFile)
+function cfg = pipelineConfig(tool, outFile)
 %CRABCONFIG Editable settings for the crab tools, optionally saved to a .mat.
 %
 %   cfg = crabConfig('legAnnotator')              return the defaults
@@ -25,13 +25,13 @@ end
 
 switch lower(tool)
     case 'legannotator', cfg = legAnnotatorDefaults();
-    case 'visualhull',   cfg = crabVisualHull('defaults');
-    case 'stereo',       cfg = stereoCrab('defaults');
+    case 'visualhull',   cfg = visualHull('defaults');
+    case 'stereo',       cfg = stereoPairReconstruct('defaults');
     case 'sync',         cfg = syncDefaults();
     case 'all'
         cfg = struct('legAnnotator', legAnnotatorDefaults(), ...
-                     'visualHull',   crabVisualHull('defaults'), ...
-                     'stereo',       stereoCrab('defaults'), ...
+                     'visualHull',   visualHull('defaults'), ...
+                     'stereo',       stereoPairReconstruct('defaults'), ...
                      'sync',         syncDefaults());
     otherwise
         error('crabConfig:tool', ['Unknown tool "%s". Use legAnnotator, ' ...

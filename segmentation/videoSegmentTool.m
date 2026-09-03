@@ -1,4 +1,4 @@
-function crabROITool(videoFile)
+function videoSegmentTool(videoFile)
 %CRABROITOOL Interactive per-frame ROI + colour threshold tool for video.
 %
 %   crabROITool                 prompts for a video file
@@ -730,7 +730,7 @@ gotoFrame(1);
         drawnow limitrate
     end
 
-end % crabROITool
+end % videoSegmentTool
 
 %% ----------------------------------------------------------- LOCAL HELPERS
 

@@ -1,4 +1,4 @@
-﻿function out = crabVisualHull(cfg)
+﻿function out = visualHull(cfg)
 %CRABVISUALHULL Visual hull of a crab from n thresholded silhouettes.
 %
 %   out = crabVisualHull            prompts for masks, DLT csv, calibrations

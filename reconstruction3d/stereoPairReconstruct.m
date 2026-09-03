@@ -1,4 +1,4 @@
-﻿function out = stereoCrab(cfg)
+﻿function out = stereoPairReconstruct(cfg)
 %STEREOCRAB Stereo reconstruction of the crab from the two close camera pairs.
 %
 %   out = stereoCrab            prompts for files

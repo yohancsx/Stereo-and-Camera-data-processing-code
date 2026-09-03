@@ -1,4 +1,4 @@
-﻿function crabLegAnnotator(cfg)
+﻿function landmarkAnnotator(cfg)
 %CRABLEGANNOTATOR Digitise crab legs in two views with a live 3-D readout.
 %
 %   crabLegAnnotator            prompts for the data folder
@@ -65,7 +65,7 @@
 
 %% -------------------------------------------------------------- DEFAULTS
 
-d = crabConfig('legAnnotator');
+d = pipelineConfig('legAnnotator');
 
 if nargin == 1 && (ischar(cfg) || isstring(cfg))
     if strcmpi(cfg, 'defaults'), disp(d); return, end
@@ -1150,7 +1150,7 @@ setStatus();
         drawnow limitrate
     end
 
-end % crabLegAnnotator
+end % landmarkAnnotator
 
 
 %% =========================================================== LOCAL HELPERS
