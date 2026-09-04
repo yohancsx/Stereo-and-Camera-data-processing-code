@@ -1,40 +1,40 @@
 function cfg = pipelineConfig(tool, outFile)
-%CRABCONFIG Editable settings for the crab tools, optionally saved to a .mat.
+%PIPELINECONFIG Editable settings for the pipeline tools, optionally saved to a .mat.
 %
-%   cfg = crabConfig('legAnnotator')              return the defaults
-%   crabConfig('legAnnotator', 'myRun.mat')       write them to a file
-%   crabConfig('all', 'cfg.mat')                  one struct per tool
+%   cfg = pipelineConfig('landmarkAnnotator')          return the defaults
+%   pipelineConfig('landmarkAnnotator', 'myRun.mat')   write them to a file
+%   pipelineConfig('all', 'cfg.mat')                   one struct per tool
 %
 %   The point of the file is a run you can come back to: save it once, edit
 %   a couple of fields in the workspace, and hand it straight to the tool.
 %
-%       crabConfig('legAnnotator','cfg.mat');
+%       pipelineConfig('landmarkAnnotator','cfg.mat');
 %       load cfg.mat                    % gives you `cfg`
 %       cfg.dataDir = "...\my frame";
 %       cfg.imagePattern = '*_roi.png'; % un-thresholded frames
-%       crabLegAnnotator(cfg)
+%       landmarkAnnotator(cfg)
 %
-%   The tools also take the file directly:  crabLegAnnotator('cfg.mat')
+%   The tools also take the file directly:  landmarkAnnotator('cfg.mat')
 %
-%   tool: 'legAnnotator' | 'visualHull' | 'stereo' | 'sync' | 'all'
+%   tool: 'landmarkAnnotator' | 'visualHull' | 'stereo' | 'sync' | 'all'
 
 arguments
-    tool (1,:) char = 'legAnnotator'
+    tool (1,:) char = 'landmarkAnnotator'
     outFile (1,:) char = ''
 end
 
 switch lower(tool)
-    case 'legannotator', cfg = legAnnotatorDefaults();
-    case 'visualhull',   cfg = visualHull('defaults');
-    case 'stereo',       cfg = stereoPairReconstruct('defaults');
-    case 'sync',         cfg = syncDefaults();
+    case 'landmarkannotator', cfg = landmarkAnnotatorDefaults();
+    case 'visualhull', cfg = visualHull('defaults');
+    case 'stereo', cfg = stereoPairReconstruct('defaults');
+    case 'sync', cfg = syncDefaults();
     case 'all'
-        cfg = struct('legAnnotator', legAnnotatorDefaults(), ...
+        cfg = struct('landmarkAnnotator', landmarkAnnotatorDefaults(), ...
                      'visualHull',   visualHull('defaults'), ...
                      'stereo',       stereoPairReconstruct('defaults'), ...
                      'sync',         syncDefaults());
     otherwise
-        error('crabConfig:tool', ['Unknown tool "%s". Use legAnnotator, ' ...
+        error('pipelineConfig:tool', ['Unknown tool "%s". Use landmarkAnnotator, ' ...
             'visualHull, stereo, sync or all.'], tool);
 end
 
@@ -48,7 +48,7 @@ end
 
 %% ------------------------------------------------------------------------
 
-function d = legAnnotatorDefaults()
+function d = landmarkAnnotatorDefaults()
 d = struct( ...
     ... % --- where the data is -------------------------------------------
     'dataDir',      '', ...   % folder holding the frame; '' prompts
@@ -58,13 +58,21 @@ d = struct( ...
     'imagePattern', '*_seg.png', ... % '*_roi.png' for un-thresholded frames
     'dltFile',      '', ...   % '' finds the *dlt*.csv in dataDir
     'calibFile',    '', ...   % '' finds the fisheye params in dataDir
+    ... % --- video mode: track across frames instead of a single instant --
+    'videoFiles',   {{}}, ... % nCams video paths, DLT camera order; {} = glob/prompt
+    'videoPattern', '*.mp4', ... % glob pattern when videoFiles is {} and dataDir is used
+    'frameRange',   [], ...   % [startFrame endFrame] or [.. .. step]; [] prompts
+    'objectSize',   [], ...   % world units; no mask to auto-measure from in
+                               % video mode, so [] falls back to half the
+                               % active pair's baseline - see visualHull.m
+                               % for the same idea with a real mask
     ... % --- geometry ----------------------------------------------------
     'pair',         [2 4], ...  % DLT columns to start on
     'camOrder',     [4 1 3 2], ...
     'yOrigin',      'top', ...
     'undistortScale', 1, ...
     ... % --- behaviour ---------------------------------------------------
-    'carryAcrossPairs', true, ... % reproject legs when switching pairs
+    'carryAcrossPairs', true, ... % reproject landmarks when switching pairs
     'cropToMask',   true, ...     % false shows the whole frame
     'snapEpipolar', false, ...
     ... % --- what the 3-D window shows (turn off for cleaner figures) -----
@@ -96,8 +104,9 @@ end
 function describe(cfg, tool)
 %DESCRIBE Print the fields most people actually edit.
 key = struct( ...
-    'legannotator', {{'dataDir','imagePattern','pair','camOrder', ...
-                      'carryAcrossPairs','cropToMask','computeCloud'}}, ...
+    'landmarkannotator', {{'dataDir','imagePattern','pair','camOrder', ...
+                      'carryAcrossPairs','cropToMask','computeCloud', ...
+                      'videoFiles','frameRange'}}, ...
     'visualhull',   {{'maskFiles','dltFile','calibFiles','camOrder', ...
                       'objectSize','fineN'}}, ...
     'stereo',       {{'dataDir','camOrder','pairs','methods'}}, ...

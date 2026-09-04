@@ -1,4 +1,4 @@
-%% gravity_align_points.m
+%% alignToGravity.m
 % =========================================================================
 % Written by Yohan Sequeira 2026
 % Align a set of digitized 3D points to vertical using a plumb line.

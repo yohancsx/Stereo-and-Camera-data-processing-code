@@ -11,7 +11,7 @@
 %   0-255 units so thresholds measured on one image type transfer to another.
 %
 %   Supported NAME values:
-%       'RmG'    R - G          red-dominant targets (crab, orange ball)
+%       'RmG'    R - G          red-dominant targets (e.g. an orange marker)
 %       'BmG'    B - G          blue-dominant targets (blue ball)
 %       'RmB'    R - B
 %       'GmR'    G - R          green-dominant targets (background water)

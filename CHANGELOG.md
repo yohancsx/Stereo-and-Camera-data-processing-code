@@ -2,6 +2,86 @@
 
 Notable changes to this repo, newest first.
 
+## 2026-09-04 (Phase 4: video/track mode)
+
+### Added
+- `landmarkAnnotator.m` can now track a part across a continuous range of
+  video frames instead of only digitising a single instant. Supply
+  `cfg.videoFiles` + `cfg.frameRange`, or run with neither image nor video
+  cfg set to get a "single image / video range" prompt. New frame-nav bar
+  (slider, edit field, -+1/-+10 buttons) funneled through `gotoFrame(n)`.
+  Every frame is digitised fresh - no carry-forward or auto-tracking
+  between frames, and no new arbitrary two-point distance type - confirmed
+  directly rather than assumed; segment tracking stays scoped to the
+  existing named "part" (base->tip) via `vh.segmentMetrics`.
+- New "export track" button / `onExportTrack()`: writes
+  `landmarks_track.csv` and `partMetrics_track.csv` (both long-format, one
+  row per frame) across every frame visited. The existing "export csv" /
+  `onExport()` is unchanged - still single-instant, no schema change.
+- `vh.undistortFrame.m` and `vh.sniffCalib.m` - extracted from
+  `+vh/loadMasks.m`'s existing inline logic (same calls, same arguments, no
+  behavior change) so the same undistortion applied to static masks/textures
+  can also undistort a video frame decoded on the fly.
+- `pipelineConfig.m`: `videoFiles`, `videoPattern`, `frameRange`,
+  `objectSize` defaults for `landmarkAnnotator`.
+
+### Notes
+- No silhouette mask exists in video mode: `cropToMask` is forced off
+  (not just defaulted - the alternative would error on the empty
+  placeholder mask), `showCloud`/`computeCloud`/`showBox` default off but
+  stay user-overridable, and the ray-clip/axis-limit working-volume box
+  (never used for triangulation itself) falls back to half the active
+  pair's camera baseline, or `cfg.objectSize/2` if set.
+- `onSave()`/`tryLoadSession()` persist/restore the per-frame track archive
+  too, so a long tracking session survives closing and reopening MATLAB.
+- **Not yet run in MATLAB** (no runtime available in this environment) -
+  verified statically only (call sites, structural function/end counts,
+  every video-only state reference traced to confirm it's unreachable
+  outside video mode). Test against a real video pair before relying on it,
+  particularly the frame-nav bar's absolute-position layout, which was
+  never checked against a running figure.
+
+## 2026-09-03 (Phase 2 de-branding)
+
+### Changed
+- Generalized every remaining "crab"-specific identifier, string, and
+  comment across `pipelineConfig.m`, `visualHull.m`,
+  `stereoPairReconstruct.m`, `landmarkAnnotator.m`, `videoSegmentTool.m`,
+  `colourThresholdProbe.m`, `probeChannel.m`, `syncByAudio.m`, and
+  `+vh/carve.m`. A final repo-wide grep confirms zero remaining "crab"
+  occurrences in any `.m` file.
+- `+vh/legMetrics.m` -> `+vh/segmentMetrics.m` (function, docstring, and its
+  crab-anatomy example generalized to a general articulated-body note).
+- `pipelineConfig.m`'s tool key `'legAnnotator'` -> `'landmarkAnnotator'`,
+  including the local `legAnnotatorDefaults()` helper.
+- `landmarkAnnotator.m`'s internal "leg" vocabulary generalized to "part" -
+  the struct field `S.legs` -> `S.parts`, 8 nested functions/handle arrays,
+  every UI label and status string, and the output filenames
+  (`legLandmarks.csv` -> `landmarks.csv`, `legMetrics.csv` ->
+  `partMetrics.csv`, default session file `legAnnotation.mat` ->
+  `landmarkAnnotation.mat`). 202 occurrences across this 1281-line file,
+  renamed in dependency order (longest/most-specific identifiers first) and
+  verified by grep after each batch.
+- `colourThresholdProbe.m` no longer hardcodes a `Test Data/Test Screenshots`
+  path outside the repo - it now prompts with `uigetdir`, matching every
+  other tool. Default class list `'crab'` -> `'subject'`. Fixed a dangling
+  reference to two scripts that never existed in this repo
+  (`t03_wand_detect_single.m`, `t04_crab_segment_colour.m`), pointing
+  instead at `videoSegmentTool.m`.
+- `camOrder = [4 1 3 2]` defaults in `visualHull.m` and
+  `stereoPairReconstruct.m` documented as rig-specific examples, not
+  requirements - both already auto-resolve pairing from data when left `[]`.
+  `stereoPairReconstruct.m`'s docstring now states the general
+  hull-vs-stereo principle before the 4-camera/2-pair worked example.
+
+### Compatibility note
+- The saved-session `.mat` format changed (`session.legs` -> `session.parts`
+  field). `landmarkAnnotator.m`'s `tryLoadSession()` reads either field name,
+  so existing session files - including
+  `testdata/reconstruction3d-example/*/legAnnotation.mat` - still load. This
+  was the one deliberate exception to a text-only pass: everything else in
+  Phase 2 changed no behavior.
+
 ## 2026-09-03 (Phase 1 reorg)
 
 ### Changed

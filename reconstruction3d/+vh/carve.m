@@ -9,8 +9,8 @@ function [count, stats] = carve(P, M, g, yOrigin, opts)
 %   yOrigin  'bottom' or 'top'
 %   opts     .wSign   nCams-by-1 expected sign of the homogeneous
 %                     denominator for points in front of each camera. Get it
-%                     from a point known to be in view (vh.crabVisualHull
-%                     passes the triangulated centroid's signs). Pass [] to
+%                     from a point known to be in view (visualHull.m passes
+%                     the triangulated centroid's signs). Pass [] to
 %                     skip the cheirality test.
 %            .chunk   voxels processed at a time (memory control)
 %            .verbose

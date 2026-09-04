@@ -105,10 +105,9 @@ for i = 1:nCams
                 i, shortName(f), W0, H0);
         end
     else
-        [obj, kind] = sniffCalib(calibFiles{i});
+        [obj, kind, calSz] = vh.sniffCalib(calibFiles{i});
 
         % The calibration must belong to this image.
-        calSz = calibImageSize(obj, kind);
         if ~isempty(calSz) && ~isequal(calSz(:).', [H0 W0])
             error('vh:loadMasks:sizeMismatch', ...
                 ['Camera %d: mask %s is %dx%d (HxW) but its calibration ' ...
@@ -119,8 +118,8 @@ for i = 1:nCams
 
         switch kind
             case 'fisheye'
-                [maskU, camI] = undistortFisheyeImage(raw, obj, 'nearest', ...
-                    'OutputView', 'same', 'ScaleFactor', opts.scaleFactor);
+                [maskU, camI] = vh.undistortFrame(raw, obj, 'fisheye', ...
+                    'method', 'nearest', 'scaleFactor', opts.scaleFactor);
 
                 % Re-check that the point path and the image path agree.
                 [~, camP] = undistortFisheyePoints([1 1], obj, opts.scaleFactor);
@@ -137,17 +136,17 @@ for i = 1:nCams
                 intr = camI;
                 if ~isempty(rgbRaw)
                     % Bilinear for texture, same transform and output view.
-                    rgbU = undistortFisheyeImage(rgbRaw, obj, 'linear', ...
-                        'OutputView', 'same', 'ScaleFactor', opts.scaleFactor);
+                    rgbU = vh.undistortFrame(rgbRaw, obj, 'fisheye', ...
+                        'method', 'linear', 'scaleFactor', opts.scaleFactor);
                 end
 
             case 'standard'
-                [maskU, camI] = undistortImage(raw, obj, 'nearest', ...
-                    'OutputView', 'same');
+                [maskU, camI] = vh.undistortFrame(raw, obj, 'standard', ...
+                    'method', 'nearest');
                 intr = camI;
                 if ~isempty(rgbRaw)
-                    rgbU = undistortImage(rgbRaw, obj, 'linear', ...
-                        'OutputView', 'same');
+                    rgbU = vh.undistortFrame(rgbRaw, obj, 'standard', ...
+                        'method', 'linear');
                 end
 
             otherwise
@@ -210,59 +209,6 @@ if islogical(A)
 end
 if ndims(A) == 3, A = max(A, [], 3); end     % any channel lit counts
 b = A > 0;
-end
-
-
-function [obj, kind] = sniffCalib(path)
-%SNIFFCALIB Pull camera parameters out of a .mat whatever they are called.
-assert(isfile(path), 'vh:loadMasks:noCalib', ...
-    'Calibration file not found: %s', path);
-L = load(path);
-fn = fieldnames(L);
-
-% A calibration session saved by the Camera Calibrator app.
-for k = 1:numel(fn)
-    v = L.(fn{k});
-    if isobject(v) && isprop(v, 'CameraParameters')
-        [obj, kind] = fromParams(v.CameraParameters);
-        return
-    end
-end
-
-for k = 1:numel(fn)
-    [obj, kind] = fromParams(L.(fn{k}));
-    if ~isempty(kind), return, end
-end
-
-error('vh:loadMasks:noParams', ...
-    ['No camera parameters found in %s.\nExpected a fisheyeParameters, ' ...
-     'fisheyeIntrinsics, cameraParameters or cameraIntrinsics object ' ...
-     '(variables present: %s).'], path, strjoin(fn', ', '));
-end
-
-
-function [obj, kind] = fromParams(v)
-obj = [];  kind = '';
-if isa(v, 'fisheyeParameters')
-    obj = v.Intrinsics;      kind = 'fisheye';
-elseif isa(v, 'fisheyeIntrinsics')
-    obj = v;                 kind = 'fisheye';
-elseif isa(v, 'cameraParameters') || isa(v, 'cameraIntrinsics')
-    obj = v;                 kind = 'standard';
-end
-end
-
-
-function sz = calibImageSize(obj, kind)
-sz = [];
-switch kind
-    case 'fisheye'
-        if isprop(obj, 'ImageSize'), sz = obj.ImageSize; end
-    case 'standard'
-        if isprop(obj, 'ImageSize') && ~isempty(obj.ImageSize)
-            sz = obj.ImageSize;
-        end
-end
 end
 
 

@@ -1,20 +1,20 @@
-﻿function [T, frame] = legMetrics(legs, opts)
-%VH.LEGMETRICS Leg geometry expressed in a body-fixed frame.
+function [T, frame] = segmentMetrics(parts, opts)
+%VH.SEGMENTMETRICS Part geometry expressed in a body-fixed frame.
 %
-%   [T, frame] = vh.legMetrics(legs)
+%   [T, frame] = vh.segmentMetrics(parts)
 %
-%   legs   struct array from crabLegAnnotator: .name .XYZ (nPts-by-3)
-%          The leg named 'body' defines the long axis.
+%   parts  struct array from landmarkAnnotator: .name .XYZ (nPts-by-3)
+%          The part named 'body' defines the long axis.
 %
-%   T      table, one row per leg:
+%   T      table, one row per part:
 %            nPts        landmarks triangulated
 %            length      polyline length, base to tip (world units)
 %            span        straight-line base-to-tip distance
-%            straight    span/length, 1 = straight leg, <1 = bent
+%            straight    span/length, 1 = straight, <1 = bent
 %            elevation   angle out of the body's transverse plane, +ve
 %                        toward the head end of the body axis (deg)
 %            azimuth     angle around the body axis (deg)
-%            angleToAxis angle between the leg vector and the body axis
+%            angleToAxis angle between the part vector and the body axis
 %            baseAlong   base position along the body axis from its origin
 %            baseRadial  base distance from the body axis
 %
@@ -24,8 +24,8 @@
 %   e1 is the body axis, from the first digitised body point to the last.
 %   That alone fixes elevation and angleToAxis but leaves azimuth free to
 %   spin about the axis, so e2 is pinned to the radial direction of the
-%   FIRST digitised leg's base: azimuth is then measured round from that
-%   leg, which is well defined and anatomically readable. frame.refLeg
+%   FIRST digitised part's base: azimuth is then measured round from that
+%   part, which is well defined and anatomically readable. frame.refPart
 %   names it.
 %
 %   Angles are frame-relative and therefore unaffected by the world scale,
@@ -33,21 +33,21 @@
 %   mm. Lengths carry whatever unit the calibration was solved in.
 
 arguments
-    legs struct
+    parts struct
     opts.bodyName (1,:) char = 'body'
 end
 
 frame = struct('origin', [NaN NaN NaN], 'e1', [], 'e2', [], 'e3', [], ...
-               'valid', false, 'note', '', 'refLeg', '');
+               'valid', false, 'note', '', 'refPart', '');
 
-names = {legs.name};
+names = {parts.name};
 bi = find(strcmpi(names, opts.bodyName), 1);
 
 % ---- body axis ----------------------------------------------------------
 if isempty(bi)
-    frame.note = sprintf('no leg named "%s"', opts.bodyName);
+    frame.note = sprintf('no part named "%s"', opts.bodyName);
 else
-    B = legs(bi).XYZ;
+    B = parts(bi).XYZ;
     B = B(all(isfinite(B),2), :);
     if size(B,1) < 2
         frame.note = 'the body needs at least 2 triangulated landmarks';
@@ -63,11 +63,11 @@ else
     end
 end
 
-% ---- transverse reference from the leg bases ----------------------------
-legIdx = setdiff(1:numel(legs), bi);
-bases = nan(numel(legIdx), 3);
-for i = 1:numel(legIdx)
-    X = legs(legIdx(i)).XYZ;
+% ---- transverse reference from the part bases ----------------------------
+partIdx = setdiff(1:numel(parts), bi);
+bases = nan(numel(partIdx), 3);
+for i = 1:numel(partIdx)
+    X = parts(partIdx(i)).XYZ;
     g = find(all(isfinite(X),2), 1, 'first');
     if ~isempty(g), bases(i,:) = X(g,:); end
 end
@@ -75,14 +75,14 @@ haveBase = find(all(isfinite(bases),2));
 
 if frame.valid
     % Azimuth needs a zero direction perpendicular to the body axis. The
-    % radial direction of the FIRST digitised leg's base is the natural
+    % radial direction of the FIRST digitised part's base is the natural
     % choice: always well defined, and anatomically interpretable as
-    % "azimuth is measured round from this leg".
+    % "azimuth is measured round from this part".
     %
-    % Note a plane fitted to the leg bases would NOT work here: on a crab
-    % those bases sit around the carapace rim, so their plane normal is
-    % essentially the body axis itself and orthogonalising it against e1
-    % leaves nothing.
+    % Note a plane fitted to all the part bases would NOT work in general:
+    % on a radially symmetric body (e.g. limbs around a central carapace)
+    % those bases sit around one rim, so their plane normal is essentially
+    % the body axis itself and orthogonalising it against e1 leaves nothing.
     e2 = [];
     if ~isempty(haveBase)
         refI = haveBase(1);
@@ -90,13 +90,13 @@ if frame.valid
         r = r - dot(r, frame.e1)*frame.e1;
         if norm(r) > 1e-9
             e2 = r / norm(r);
-            frame.refLeg = legs(legIdx(refI)).name;
+            frame.refPart = parts(partIdx(refI)).name;
             frame.note = sprintf('azimuth 0 = radial direction of "%s"', ...
-                frame.refLeg);
+                frame.refPart);
         end
     end
     if isempty(e2)
-        frame.note = 'azimuth is arbitrary (no leg base off the body axis)';
+        frame.note = 'azimuth is arbitrary (no part base off the body axis)';
         a = [1 0 0];
         if abs(dot(a, frame.e1)) > 0.9, a = [0 1 0]; end
         e2 = a - dot(a, frame.e1)*frame.e1;
@@ -106,15 +106,15 @@ if frame.valid
     frame.e3 = cross(frame.e1, e2);
 end
 
-% ---- per-leg numbers ----------------------------------------------------
-n = numel(legIdx);
+% ---- per-part numbers -----------------------------------------------------
+n = numel(partIdx);
 nm = cell(n,1);
 [nPts, len, span, straight, elev, azim, ang, bAlong, bRad] = deal(nan(n,1));
 
 for i = 1:n
-    k = legIdx(i);
-    nm{i} = legs(k).name;
-    X = legs(k).XYZ;
+    k = partIdx(i);
+    nm{i} = parts(k).name;
+    X = parts(k).XYZ;
     X = X(all(isfinite(X),2), :);
     nPts(i) = size(X,1);
     if nPts(i) < 2, continue, end
@@ -138,7 +138,6 @@ for i = 1:n
 end
 
 T = table(nm, nPts, len, span, straight, elev, azim, ang, bAlong, bRad, ...
-    'VariableNames', {'leg','nPts','length','span','straight', ...
+    'VariableNames', {'part','nPts','length','span','straight', ...
                       'elevation','azimuth','angleToAxis','baseAlong','baseRadial'});
 end
-

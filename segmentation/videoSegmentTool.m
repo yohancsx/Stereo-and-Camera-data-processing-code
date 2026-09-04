@@ -1,15 +1,15 @@
 function videoSegmentTool(videoFile)
-%CRABROITOOL Interactive per-frame ROI + colour threshold tool for video.
+%VIDEOSEGMENTTOOL Interactive per-frame ROI + colour threshold tool for video.
 %
-%   crabROITool                 prompts for a video file
-%   crabROITool(videoFile)      opens that file
+%   videoSegmentTool                 prompts for a video file
+%   videoSegmentTool(videoFile)      opens that file
 %
 %   For a chosen frame you draw an ROI (to exclude glass and water-surface
 %   reflections), pick a colour channel and a threshold band, and export
 %   either the ROI-masked frame or the ROI + threshold silhouette.
 %
-%   Settings are stored PER FRAME, because the lighting changes as the crab
-%   falls through the tank. Navigating back to a frame you have already set
+%   Settings are stored PER FRAME, because the lighting changes as the
+%   subject moves through the scene. Navigating back to a frame you have set
 %   up restores its ROI and thresholds. Scrubbing through frames does NOT
 %   add them to the saved set - press "Save settings" (or export) for that,
 %   so "All saved" only ever touches frames you deliberately kept.
@@ -38,7 +38,7 @@ function videoSegmentTool(videoFile)
 %   that a threshold set here reproduces exactly in batch code:
 %       v = probeChannel(img, channel);  mask = v >= lo & v <= hi;
 %
-%   Yohan Sequeira - Crab Visual Hull Analysis
+%   Yohan Sequeira
 
 %% ---------------------------------------------------------------- SET-UP
 
@@ -93,7 +93,7 @@ S.store = struct('frame',{},'channel',{},'lo',{},'hi',{}, ...
 
 %% ------------------------------------------------------------------- UI
 
-fig = uifigure('Name', sprintf('crabROITool  -  %s', S.base), ...
+fig = uifigure('Name', sprintf('videoSegmentTool  -  %s', S.base), ...
     'Position', [60 60 1520 920], 'Color', [0.94 0.94 0.94]);
 
 main = uigridlayout(fig, [3 2]);
@@ -711,7 +711,7 @@ gotoFrame(1);
             L = load(f);
             if isfield(L, 'session') && ~isempty(L.session.store)
                 S.store = L.session.store;
-                fprintf('crabROITool: loaded %d saved frame(s) from %s\n', ...
+                fprintf('videoSegmentTool: loaded %d saved frame(s) from %s\n', ...
                     numel(S.store), f);
             end
         catch

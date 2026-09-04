@@ -1,9 +1,9 @@
 ﻿function out = visualHull(cfg)
-%CRABVISUALHULL Visual hull of a crab from n thresholded silhouettes.
+%VISUALHULL Visual hull of an object from n thresholded silhouettes.
 %
-%   out = crabVisualHull            prompts for masks, DLT csv, calibrations
-%   out = crabVisualHull(cfg)       runs with the given settings
-%   cfg = crabVisualHull('defaults')  returns the default settings to edit
+%   out = visualHull            prompts for masks, DLT csv, calibrations
+%   out = visualHull(cfg)       runs with the given settings
+%   cfg = visualHull('defaults')  returns the default settings to edit
 %
 %   PIPELINE
 %     1. read DLT-11 coefficients (11 rows x nCams columns)
@@ -36,7 +36,7 @@
 %     cfg.fineN         fine pass resolution per axis
 %     cfg.minCams       occupancy threshold; [] means all cameras (strict)
 %
-%   Yohan Sequeira - Crab Visual Hull Analysis
+%   Yohan Sequeira
 
 %% ------------------------------------------------------------- DEFAULTS
 
@@ -44,7 +44,8 @@ d = struct( ...
     'maskFiles',       {{}}, ...
     'dltFile',         '', ...
     'calibFiles',      {{}}, ...
-    'camOrder',        [4 1 3 2], ...
+    'camOrder',        [4 1 3 2], ... % example only, for this rig - leave
+                                       % [] to resolve pairing from the data
     'yOrigin',         'auto', ...
     'objectSize',      [], ...
     'boxPadFactor',    1.6, ...
@@ -96,7 +97,7 @@ if isempty(cfg.calibFiles)
          'order as the masks, or one file for all (Cancel to skip)'], ...
         'MultiSelect', 'on');
     if isequal(f, 0)
-        warning('crabVisualHull:noCalib', ...
+        warning('visualHull:noCalib', ...
             ['No calibration selected. The masks will NOT be undistorted, ' ...
              'which does not match a DLT fitted to undistorted points.']);
         cfg.calibFiles = {};
@@ -116,13 +117,13 @@ end
 %% ------------------------------------------------------------------- RUN
 
 fprintf('\n============================================================\n');
-fprintf('  crabVisualHull\n');
+fprintf('  visualHull\n');
 fprintf('============================================================\n');
 
 % --- 1. calibration -------------------------------------------------------
 [P, L, camC] = vh.readDLT(cfg.dltFile);
 nCams = size(P, 3);
-assert(numel(cfg.maskFiles) == nCams, 'crabVisualHull:count', ...
+assert(numel(cfg.maskFiles) == nCams, 'visualHull:count', ...
     'The DLT file has %d camera(s) but %d mask(s) were given.', ...
     nCams, numel(cfg.maskFiles));
 
@@ -239,7 +240,7 @@ if ~any(occC(:))
     minCams = nCams - 1;
     occC = cntC >= minCams;
 end
-assert(any(occC(:)), 'crabVisualHull:emptyCoarse', ...
+assert(any(occC(:)), 'visualHull:emptyCoarse', ...
     ['Nothing was carved. Check the reprojection overlays: most likely ' ...
      'the box misses the animal (raise objectSize / boxPadFactor), the ' ...
      'camera pairing is wrong, or the masks are not the same instant.']);
@@ -263,7 +264,7 @@ if nnz(occC) < 150 && cfg.coarseN < 160
     cntC = vh.carve(P, M, gC, yOrigin, 'wSign', wSign, ...
         'chunk', cfg.chunk, 'verbose', cfg.verbose);
     occC = cntC >= minCams;
-    assert(any(occC(:)), 'crabVisualHull:emptyCoarse2', ...
+    assert(any(occC(:)), 'visualHull:emptyCoarse2', ...
         'Still nothing carved after refining the coarse pass.');
     [ix, iy, iz] = ind2sub(size(occC), find(occC));
     pad = 2 * [mean(diff(gC.x)) mean(diff(gC.y)) mean(diff(gC.z))];
@@ -319,7 +320,7 @@ if cfg.saveResults
         try
             stlwrite(triangulation(H.faces, H.vertices), [stem '.stl']);
         catch ME
-            warning('crabVisualHull:stl', 'STL export failed: %s', ME.message);
+            warning('visualHull:stl', 'STL export failed: %s', ME.message);
         end
     end
     fprintf('\n  saved -> %s.mat\n', stem);
@@ -348,7 +349,7 @@ for k = 1:numel(fn)
 end
 extra = setdiff(fieldnames(c), fn);
 if ~isempty(extra)
-    warning('crabVisualHull:unknownFields', ...
+    warning('visualHull:unknownFields', ...
         'Ignoring unknown cfg field(s): %s', strjoin(extra', ', '));
 end
 end

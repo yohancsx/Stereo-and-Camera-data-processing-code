@@ -1,18 +1,25 @@
 ﻿function out = stereoPairReconstruct(cfg)
-%STEREOCRAB Stereo reconstruction of the crab from the two close camera pairs.
+%STEREOPAIRRECONSTRUCT Stereo reconstruction of an object from camera pairs.
 %
-%   out = stereoCrab            prompts for files
-%   out = stereoCrab(cfg)       runs with the given settings
-%   cfg = stereoCrab('defaults')
+%   out = stereoPairReconstruct            prompts for files
+%   out = stereoPairReconstruct(cfg)       runs with the given settings
+%   cfg = stereoPairReconstruct('defaults')
 %
 %   WHY STEREO RATHER THAN A HULL
-%   The four cameras sit in two tight pairs about 160 deg apart. That is
-%   nearly the worst case for a visual hull - two viewing directions along
-%   one line cannot carve depth, so the hull stretches along the camera
-%   axis. It is a perfectly ordinary case for stereo: each pair has a ~12
-%   deg convergence, which is a normal stereo baseline, and the two pairs
-%   look at opposite sides, so together they sample the front and the back
-%   of the animal.
+%   A visual hull needs viewing directions spread around the object -
+%   directions clustered along one line cannot carve depth, so the hull
+%   stretches along that axis instead. A stereo pair does not have that
+%   failure mode as long as its own convergence angle is reasonable: it
+%   triangulates depth directly from the pair, independent of how the rig's
+%   OTHER cameras are arranged.
+%
+%   Worked example this rig was built for: four cameras sitting in two
+%   pairs about 160 deg apart - nearly the worst case for a visual hull -
+%   but each pair has its own ~12 deg convergence (a normal stereo
+%   baseline), and the two pairs look at opposite sides, so together they
+%   sample the front and the back of the object. cfg.pairs defaults to
+%   auto-detecting the closest-camera pairs for any number of cameras, not
+%   just four.
 %
 %   PIPELINE
 %     1. read the DLT coefficients and UNDISTORT both the masks and the
@@ -37,7 +44,7 @@
 %     cfg.yOrigin     'auto' | 'top' | 'bottom'
 %     cfg.methods     any of {'sgm','bm','features'}
 %
-%   Yohan Sequeira - Crab Visual Hull Analysis
+%   Yohan Sequeira
 
 %% ------------------------------------------------------------- DEFAULTS
 
@@ -47,8 +54,9 @@ d = struct( ...
     'imageFiles',  {{}}, ...
     'dltFile',     '', ...
     'calibFile',   '', ...
-    'camOrder',    [4 1 3 2], ...
-    'pairs',       [], ...        % [] = find the two closest pairs
+    'camOrder',    [4 1 3 2], ... % example only, for this rig - leave [] to
+                                   % resolve pairing from the data
+    'pairs',       [], ...        % [] = auto-pick nCams/2 closest pairs
     'yOrigin',     'top', ...
     'boxPadFactor', 1.6, ...
     'rectifyFromData', true, ...
@@ -90,8 +98,8 @@ if isempty(cfg.maskFiles)
     s = dir(fullfile(cfg.dataDir, '*_seg.png'));
     c = [dir(fullfile(cfg.dataDir,'*dlt*.csv')); dir(fullfile(cfg.dataDir,'*DLT*.csv'))];
     p = dir(fullfile(cfg.dataDir, '*.mat'));
-    assert(~isempty(m), 'stereoCrab:noMasks', 'No *_mask.png in %s', cfg.dataDir);
-    assert(numel(s) == numel(m), 'stereoCrab:noImages', ...
+    assert(~isempty(m), 'stereoPairReconstruct:noMasks', 'No *_mask.png in %s', cfg.dataDir);
+    assert(numel(s) == numel(m), 'stereoPairReconstruct:noImages', ...
         ['Found %d mask(s) but %d *_seg.png. Stereo needs the texture ' ...
          'images, one per camera.'], numel(m), numel(s));
     cfg.maskFiles  = fullfile(cfg.dataDir, {m.name}');
@@ -104,14 +112,14 @@ if isempty(cfg.outDir)
 end
 
 fprintf('\n============================================================\n');
-fprintf('  stereoCrab\n');
+fprintf('  stereoPairReconstruct\n');
 fprintf('============================================================\n');
 
 %% --------------------------------------------------- 1. CALIBRATION + VIEWS
 
 [P, ~, camC] = vh.readDLT(cfg.dltFile);
 nCams = size(P,3);
-assert(numel(cfg.maskFiles) == nCams, 'stereoCrab:count', ...
+assert(numel(cfg.maskFiles) == nCams, 'stereoPairReconstruct:count', ...
     'DLT has %d cameras but %d masks were given.', nCams, numel(cfg.maskFiles));
 
 M = vh.loadMasks(cfg.maskFiles, cfg.calibFile, ...

@@ -1,7 +1,7 @@
-﻿%% colourProbe.m
-% Measure the colour separation between the crab / wand markers and the
-% underwater background, and turn it into thresholds the batch segmentation
-% code can use directly.
+﻿%% colourThresholdProbe.m
+% Measure the colour separation between the subject / wand markers and the
+% background, and turn it into thresholds the batch segmentation code can
+% use directly.
 %
 % Workflow
 %   1. ANNOTATE  - for each training screenshot you pick which classes are
@@ -18,13 +18,13 @@
 %                  screenshots so you can see whether they actually work.
 %
 % Using the result in batch code:
-%   S = load('params/colourProbe.mat');
-%   r = S.probe.recipe.crab;
+%   S = load('params/colourThresholdProbe.mat');
+%   r = S.probe.recipe.subject;
 %   mask = r.polarity * probeChannel(img, r.channel) > r.threshold;
 %
 % Requires: Image Processing Toolbox. No Statistics Toolbox dependency.
 %
-% Yohan Sequeira - Crab Visual Hull Analysis
+% Yohan Sequeira
 
 %% ------------------------------------------------------------------ CONFIG
 
@@ -34,9 +34,15 @@ codeDir = fileparts(mfilename('fullpath'));
 if isempty(codeDir), codeDir = pwd; end     % running section-by-section
 addpath(codeDir);                           % so probeChannel is visible
 
-% Screenshots live outside Code/, in the sibling "Test Data" folder, split
-% into Training (you draw ROIs on these) and Validation (applied only).
-shotDir  = fullfile(fileparts(codeDir), 'Test Data', 'Test Screenshots');
+% Screenshots live in a folder you choose, split into Training (you draw
+% ROIs on these) and Validation (applied only) subfolders. Leave shotDir ''
+% to be prompted; set it to skip the prompt on repeat runs.
+shotDir = '';
+if isempty(shotDir)
+    shotDir = uigetdir(codeDir, ...
+        'Select the folder containing Training/ and Validation/ screenshots');
+    if isequal(shotDir, 0), error('No screenshot folder selected - stopping.'); end
+end
 trainDir = fullfile(shotDir, 'Training');
 testDir  = fullfile(shotDir, 'Validation');
 
@@ -45,14 +51,15 @@ testDir  = fullfile(shotDir, 'Validation');
 cfg.trainImages    = listImages(trainDir);
 cfg.validateImages = listImages(testDir);
 
-assert(~isempty(cfg.trainImages), 'colourProbe:noTraining', ...
+assert(~isempty(cfg.trainImages), 'colourThresholdProbe:noTraining', ...
     'No images found in %s', trainDir);
 
 % --- Classes to annotate --------------------------------------------------
-% tool: 'assisted' (edge-snapping, best for the crab), 'freehand', 'polygon'
+% tool: 'assisted' (edge-snapping, best for an organic/irregular subject),
+%       'freehand', 'polygon'
 % isBackground: pooled together as the negative class for every target
 cfg.classes = struct( ...
-    'name',        {'crab',     'orangeBall', 'blueBall', 'background'}, ...
+    'name',        {'subject',  'orangeBall', 'blueBall', 'background'}, ...
     'tool',        {'assisted', 'polygon',    'polygon',  'polygon'   }, ...
     'isBackground',{ false,      false,        false,      true       });
 
@@ -65,12 +72,12 @@ cfg.maxPxPerROI     = 5e4;    % pixels kept per ROI (random subsample)
 cfg.maxPxPerClass   = 2e5;    % pixels used per class when scoring
 
 % --- Threshold policy -----------------------------------------------------
-% 'generous'     keeps ~targetRecall of target pixels (fewest missed legs)
+% 'generous'     keeps ~targetRecall of target pixels (fewest missed parts)
 % 'balanced'     maximises Youden's J (TPR - FPR)
 % 'conservative' sits at the bgPercentile of the background distribution
-% A visual hull is a cone INTERSECTION, so a leg missing from one view is
+% A visual hull is a cone INTERSECTION, so a part missing from one view is
 % deleted from the reconstruction entirely, while a stray blob in one view is
-% usually carved away by the other three. Default to 'generous'.
+% usually carved away by the others. Default to 'generous'.
 cfg.recommend     = 'generous';
 cfg.targetRecall  = 0.99;     % for 'generous'
 cfg.bgPercentile  = 99.9;     % for 'conservative'
@@ -82,7 +89,7 @@ cfg.excludeAboveRow   = [];    % e.g. 0.25 -> ignore the top 25% of the frame
                                % reflection once you know where it sits)
 
 % --- Output ---------------------------------------------------------------
-cfg.outFile = fullfile(codeDir, 'params', 'colourProbe.mat');
+cfg.outFile = fullfile(codeDir, 'params', 'colourThresholdProbe.mat');
 
 %% -------------------------------------------------------------- HOUSEKEEPING
 
@@ -507,8 +514,8 @@ for iImg = 1:numel(cfg.validateImages)
     end
 end
 
-fprintf('\nDone. Next: feed the saved thresholds into t03_wand_detect_single.m\n');
-fprintf('and t04_crab_segment_colour.m.\n');
+fprintf('\nDone. Next: feed the saved thresholds into videoSegmentTool.m to\n');
+fprintf('batch-segment the trial video(s).\n');
 
 %% ----------------------------------------------------------- LOCAL FUNCTIONS
 
@@ -562,7 +569,7 @@ end
 
 function c = colourFor(name)
     switch lower(name)
-        case 'crab',       c = [0.90 0.35 0.15];
+        case 'subject',    c = [0.90 0.35 0.15];
         case 'orangeball', c = [1.00 0.60 0.10];
         case 'blueball',   c = [0.20 0.35 0.90];
         case 'background', c = [0.35 0.55 0.35];

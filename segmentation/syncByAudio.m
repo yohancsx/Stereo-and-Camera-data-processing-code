@@ -46,7 +46,7 @@
 % Requires: Signal Processing Toolbox (bandpass, xcorr), Image Processing
 % Toolbox only for the optional visual check.
 %
-% Yohan Sequeira - Crab Visual Hull Analysis
+% Yohan Sequeira
 
 %% ------------------------------------------------------------------ CONFIG
 
