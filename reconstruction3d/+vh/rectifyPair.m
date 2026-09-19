@@ -94,7 +94,11 @@ samp = alg ./ sqrt(Fx1(1,:).'.^2 + Fx1(2,:).'.^2 + Ftx2(1,:).'.^2 + Ftx2(2,:).'.
 S.checks.fSampsonPx = max(samp);
 
 %% ---- rectifying transforms ---------------------------------------------
-imSize = [M1.H M1.W];
+% estimateStereoRectification/estimateUncalibratedRectification document
+% this argument as "size of image 2" (MathWorks docs) - camera b, not a.
+% Matters once the pair's two cameras have different native resolutions;
+% harmless when they match, which is why this went unnoticed until now.
+imSize = [M2.H M2.W];
 if exist('estimateStereoRectification', 'file')
     [t1, t2] = estimateStereoRectification(F, p1, p2, imSize);
 else

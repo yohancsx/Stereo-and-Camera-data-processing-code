@@ -73,9 +73,16 @@ if C.n > 0 && ~isempty(S.Irgb1)
     rr = min(max(round(R.p1(kept,2)),1), size(S.Irgb1,1));
     idx = sub2ind([size(S.Irgb1,1) size(S.Irgb1,2)], rr, cc);
     Ir = S.Irgb1;
-    C.rgb = [reshape(Ir(idx),[],1), ...
-             reshape(Ir(idx + numel(Ir)/3),[],1), ...
-             reshape(Ir(idx + 2*numel(Ir)/3),[],1)];
+    if size(Ir,3) == 3
+        C.rgb = [reshape(Ir(idx),[],1), ...
+                 reshape(Ir(idx + numel(Ir)/3),[],1), ...
+                 reshape(Ir(idx + 2*numel(Ir)/3),[],1)];
+    else
+        % Grayscale texture on this camera - replicate the one channel so
+        % every point still gets an R=G=B colour instead of garbage/a crash.
+        g = reshape(Ir(idx), [], 1);
+        C.rgb = [g g g];
+    end
 end
 
 if opts.verbose

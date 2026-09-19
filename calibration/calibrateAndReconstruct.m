@@ -37,6 +37,7 @@ clear; clc;
 
 thisDir = fileparts(mfilename('fullpath'));
 if isempty(thisDir), thisDir = pwd; end
+thisDir = pwd;
 addpath(thisDir, fullfile(thisDir, 'Helpers'));
 
 %% Step 1 - Load fisheye undistortion parameters

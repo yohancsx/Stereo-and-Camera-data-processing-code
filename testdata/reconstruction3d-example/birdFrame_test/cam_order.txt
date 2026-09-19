@@ -1,0 +1,6 @@
+camera pairing in use
+  DLT  mask#    mask file                            
+  1    8        08_slomo_1742499306_f05120_roi_mask.png             
+  2    9        09_slomo_1742499318_f05120_roi_mask.png            
+  3    10       10_slomo_1742499279_f05120_roi_mask.png           
+          
